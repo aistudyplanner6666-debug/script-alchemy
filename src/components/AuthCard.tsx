@@ -20,6 +20,10 @@ export function AuthCard({ mode, onSubmit, footer }: Props) {
   async function handle(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    if (mode === "signup" && !isPasswordAcceptable(password)) {
+      setError("Please choose a stronger password.");
+      return;
+    }
     setLoading(true);
     try {
       await onSubmit({ name, email, password });
