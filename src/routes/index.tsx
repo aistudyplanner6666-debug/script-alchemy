@@ -8,6 +8,7 @@ import { HistoryPanel } from "@/components/HistoryPanel";
 import { Toast } from "@/components/Toast";
 import { SkeletonScript } from "@/components/Loader";
 import { generateMockScript, type Mood, type Script } from "@/lib/mockScript";
+import { scriptApi } from "@/lib/api";
 
 export const Route = createFileRoute("/")({
   component: Index,
