@@ -36,7 +36,8 @@ cinescript/
     │   ├── __root.tsx                # Root layout (HTML shell, providers)
     │   ├── index.tsx                 # / — landing + generator
     │   ├── login.tsx                 # /login
-    │   └── signup.tsx                # /signup
+    │   ├── signup.tsx                # /signup
+    │   └── forgot-password.tsx       # /forgot-password (3-phase wizard)
     │
     ├── components/
     │   ├── Navbar.tsx                # Top nav (auth-aware)
@@ -48,7 +49,8 @@ cinescript/
     │   ├── HistoryPanel.tsx          # Slide-in history sidebar
     │   ├── Loader.tsx                # Spinner + skeletons
     │   ├── Toast.tsx                 # Error toast
-    │   └── AuthCard.tsx              # Shared login/signup form
+    │   ├── AuthCard.tsx              # Shared login/signup form
+    │   └── PasswordStrength.tsx      # 6-tier strength meter + rules
     │
     ├── context/
     │   └── AuthContext.tsx           # Auth state + token persistence
@@ -117,6 +119,83 @@ Returns the currently authenticated user. Requires `Authorization` header.
 Invalidates the current token server-side. Requires `Authorization` header.
 
 **Response 200** — `{ "ok": true }`
+
+---
+
+### Forgot password — 3-phase flow
+
+A complete password-reset wizard lives at **`/forgot-password`** and is wired in
+`src/lib/api.ts` under `passwordApi`. While `VITE_API_BASE_URL` is unset (or
+the backend is unreachable), the flow is fully mocked in-memory: the generated
+OTP is logged to the browser console **and** returned in the response as
+`devOtp` so QA can complete the wizard without an inbox. Remove the `devOtp`
+field once your real backend takes over.
+
+#### Phase 1 — `POST /auth/forgot-password`
+Generate a 6-digit OTP, persist it server-side with ~10 min TTL, email it.
+Always respond with success to avoid account enumeration.
+
+**Request**
+```json
+{ "email": "karan@studio.com" }
+```
+**Response 200**
+```json
+{ "ok": true, "message": "If that email exists, a code has been sent." }
+```
+Mock-only field: `devOtp` (the 6-digit code) — do **not** return this from production.
+
+**Suggested errors**
+- `429` — rate-limit (e.g. 3 per 15 min per email/IP)
+
+#### Phase 2 — `POST /auth/verify-otp`
+Verify the OTP and exchange it for a single-use `resetToken` (~10 min TTL).
+Delete the OTP after success.
+
+**Request**
+```json
+{ "email": "karan@studio.com", "otp": "482915" }
+```
+**Response 200**
+```json
+{ "resetToken": "a1b2c3d4e5f6..." }
+```
+**Suggested errors**
+- `400` `{ "message": "Incorrect OTP" }`
+- `400` `{ "message": "OTP expired" }`
+- `429` after N failed attempts
+
+#### Phase 3 — `POST /auth/reset-password`
+Consume the `resetToken`, hash the new password (bcrypt/argon2), update the
+user, invalidate all existing sessions, delete the reset token.
+
+**Request**
+```json
+{ "resetToken": "a1b2c3d4e5f6...", "password": "NewBlockbuster#2025" }
+```
+**Response 200**
+```json
+{ "ok": true }
+```
+**Suggested errors**
+- `400` `{ "message": "Invalid or expired reset link" }`
+- `422` `{ "message": "Password does not meet requirements" }`
+
+**Password rules enforced by the frontend** (mirror server-side):
+
+| Rule              | Required |
+| ----------------- | -------- |
+| 8+ characters     | yes      |
+| Uppercase letter  | yes      |
+| Lowercase letter  | yes      |
+| Number            | yes      |
+| Symbol            | yes      |
+| 12+ chars         | bonus    |
+| No common words   | yes (`password`, `qwerty`, `123456`, `admin`, `letmein`…) |
+| No 3+ char repeats| yes (`aaaa`, `1111`…) |
+
+The strength meter (`src/components/PasswordStrength.tsx`) scores 0–5 and
+requires at least **3** to allow submission.
 
 ---
 

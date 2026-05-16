@@ -2,6 +2,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { Link } from "@tanstack/react-router";
 import { Clapperboard } from "lucide-react";
+import { PasswordStrength, isPasswordAcceptable } from "./PasswordStrength";
 
 interface Props {
   mode: "login" | "signup";
@@ -19,6 +20,10 @@ export function AuthCard({ mode, onSubmit, footer }: Props) {
   async function handle(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    if (mode === "signup" && !isPasswordAcceptable(password)) {
+      setError("Please choose a stronger password.");
+      return;
+    }
     setLoading(true);
     try {
       await onSubmit({ name, email, password });
@@ -73,12 +78,20 @@ export function AuthCard({ mode, onSubmit, footer }: Props) {
             </Field>
             <Field label="Password">
               <input
-                required type="password" minLength={6}
+                required type="password" minLength={isSignup ? 8 : 6}
                 value={password} onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 className="auth-input"
               />
+              {isSignup && <PasswordStrength password={password} />}
             </Field>
+            {!isSignup && (
+              <div className="-mt-2 text-right">
+                <Link to="/forgot-password" className="text-[11px] text-muted-foreground transition hover:text-gold">
+                  Forgot password?
+                </Link>
+              </div>
+            )}
 
             {error && (
               <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
