@@ -36,7 +36,8 @@ cinescript/
     │   ├── __root.tsx                # Root layout (HTML shell, providers)
     │   ├── index.tsx                 # / — landing + generator
     │   ├── login.tsx                 # /login
-    │   └── signup.tsx                # /signup
+    │   ├── signup.tsx                # /signup
+    │   └── forgot-password.tsx       # /forgot-password (3-phase wizard)
     │
     ├── components/
     │   ├── Navbar.tsx                # Top nav (auth-aware)
@@ -48,7 +49,8 @@ cinescript/
     │   ├── HistoryPanel.tsx          # Slide-in history sidebar
     │   ├── Loader.tsx                # Spinner + skeletons
     │   ├── Toast.tsx                 # Error toast
-    │   └── AuthCard.tsx              # Shared login/signup form
+    │   ├── AuthCard.tsx              # Shared login/signup form
+    │   └── PasswordStrength.tsx      # 6-tier strength meter + rules
     │
     ├── context/
     │   └── AuthContext.tsx           # Auth state + token persistence
