@@ -82,6 +82,108 @@ export const authApi = {
 };
 
 /* ============================================================
+ *  FORGOT PASSWORD — 3-phase flow (with mock fallback)
+ *
+ *  Phase 1: POST /auth/forgot-password { email }
+ *           -> { ok, message }       (sends 6-digit OTP to email)
+ *  Phase 2: POST /auth/verify-otp    { email, otp }
+ *           -> { resetToken }        (short-lived token, ~10 min)
+ *  Phase 3: POST /auth/reset-password { resetToken, password }
+ *           -> { ok }
+ *
+ *  When VITE_API_BASE_URL is empty (or backend errors), we mock
+ *  the flow in-memory so the UI is fully testable. The mock OTP
+ *  is logged to the browser console AND surfaced in the response
+ *  as `devOtp` so you can complete the flow without an inbox.
+ * ============================================================ */
+
+interface MockOtpRecord { otp: string; expiresAt: number; }
+const mockOtpStore = new Map<string, MockOtpRecord>();
+const mockResetTokens = new Map<string, { email: string; expiresAt: number }>();
+
+function genOtp() { return Math.floor(100000 + Math.random() * 900000).toString(); }
+function genToken() { return crypto.randomUUID().replace(/-/g, ""); }
+
+export const passwordApi = {
+  // PHASE 1
+  forgotPassword: async (email: string): Promise<{ ok: true; message: string; devOtp?: string }> => {
+    if (!API_BASE_URL) {
+      const otp = genOtp();
+      mockOtpStore.set(email.toLowerCase(), { otp, expiresAt: Date.now() + 10 * 60_000 });
+      // eslint-disable-next-line no-console
+      console.info(`[mock] OTP for ${email}: ${otp}`);
+      await new Promise((r) => setTimeout(r, 700));
+      return { ok: true, message: "OTP sent to your email", devOtp: otp };
+    }
+    try {
+      return await request("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      });
+    } catch {
+      const otp = genOtp();
+      mockOtpStore.set(email.toLowerCase(), { otp, expiresAt: Date.now() + 10 * 60_000 });
+      // eslint-disable-next-line no-console
+      console.info(`[mock fallback] OTP for ${email}: ${otp}`);
+      return { ok: true, message: "OTP sent (mock)", devOtp: otp };
+    }
+  },
+
+  // PHASE 2
+  verifyOtp: async (email: string, otp: string): Promise<{ resetToken: string }> => {
+    const tryMock = (): { resetToken: string } => {
+      const record = mockOtpStore.get(email.toLowerCase());
+      if (!record) throw new ApiError("Please request a new OTP", 400);
+      if (Date.now() > record.expiresAt) throw new ApiError("OTP expired", 400);
+      if (record.otp !== otp.trim()) throw new ApiError("Incorrect OTP", 400);
+      const token = genToken();
+      mockResetTokens.set(token, { email: email.toLowerCase(), expiresAt: Date.now() + 10 * 60_000 });
+      mockOtpStore.delete(email.toLowerCase());
+      return { resetToken: token };
+    };
+    if (!API_BASE_URL) {
+      await new Promise((r) => setTimeout(r, 500));
+      return tryMock();
+    }
+    try {
+      return await request<{ resetToken: string }>("/auth/verify-otp", {
+        method: "POST",
+        body: JSON.stringify({ email, otp }),
+      });
+    } catch (e) {
+      // only fallback if backend is unreachable (network error)
+      if (e instanceof ApiError && e.status !== 0) throw e;
+      return tryMock();
+    }
+  },
+
+  // PHASE 3
+  resetPassword: async (resetToken: string, password: string): Promise<{ ok: true }> => {
+    const tryMock = (): { ok: true } => {
+      const record = mockResetTokens.get(resetToken);
+      if (!record) throw new ApiError("Invalid or expired reset link", 400);
+      if (Date.now() > record.expiresAt) throw new ApiError("Reset link expired", 400);
+      mockResetTokens.delete(resetToken);
+      return { ok: true };
+    };
+    if (!API_BASE_URL) {
+      await new Promise((r) => setTimeout(r, 600));
+      return tryMock();
+    }
+    try {
+      return await request<{ ok: true }>("/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({ resetToken, password }),
+      });
+    } catch (e) {
+      if (e instanceof ApiError && e.status !== 0) throw e;
+      return tryMock();
+    }
+  },
+};
+
+
+/* ============================================================
  *  SCRIPT ENDPOINTS
  *  Falls back to mock generation if VITE_API_BASE_URL is empty
  *  or the backend is unreachable — keeps the demo working.
