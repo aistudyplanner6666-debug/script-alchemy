@@ -8,6 +8,7 @@ import { HistoryPanel } from "@/components/HistoryPanel";
 import { Toast } from "@/components/Toast";
 import { SkeletonScript } from "@/components/Loader";
 import { generateMockScript, type Mood, type Script } from "@/lib/mockScript";
+import { scriptApi } from "@/lib/api";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -51,8 +52,8 @@ function Index() {
     setError(null);
     setScript(null);
     try {
-      await new Promise((r) => setTimeout(r, 1400));
-      const next = generateMockScript(situation, mood);
+      await new Promise((r) => setTimeout(r, 400));
+      const next = await scriptApi.generate(situation, mood);
       setScript(next);
       const updated = [next, ...history].slice(0, 20);
       persist(updated);
