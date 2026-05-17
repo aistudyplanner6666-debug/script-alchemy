@@ -31,6 +31,7 @@ function Index() {
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<Script[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [creatorOpen, setCreatorOpen] = useState(false);
 
   useEffect(() => {
     try {
