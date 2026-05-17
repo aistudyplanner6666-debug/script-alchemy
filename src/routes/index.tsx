@@ -73,7 +73,7 @@ function Index() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden">
-      <CreatorModal />
+      <CreatorModal open={creatorOpen} onClose={() => setCreatorOpen(false)} />
       <Navbar onHistoryClick={() => setHistoryOpen(true)} />
       <main className="relative">
         <Hero />
@@ -109,8 +109,19 @@ function Index() {
         )}
       </main>
 
-      <footer className="relative z-10 border-t border-white/5 py-8 text-center text-xs uppercase tracking-[0.3em] text-muted-foreground">
-        CineScript Studios · Crafted with <span className="text-gold">★</span> for cinema lovers
+      <footer className="relative z-10 border-t border-white/5 py-8 text-center">
+        <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+          CineScript Studios · Crafted with <span className="text-gold">★</span> for cinema lovers
+        </p>
+        <motion.button
+          onClick={() => setCreatorOpen(true)}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="mt-4 inline-flex items-center gap-2 rounded-full border border-gold/20 bg-gold/5 px-5 py-2 text-xs font-medium tracking-wide text-gold transition hover:border-gold/40 hover:bg-gold/10"
+        >
+          <User className="h-3.5 w-3.5" />
+          About Creator
+        </motion.button>
       </footer>
 
       <HistoryPanel
