@@ -7,6 +7,7 @@ import { OutputDisplay } from "@/components/OutputDisplay";
 import { HistoryPanel } from "@/components/HistoryPanel";
 import { Toast } from "@/components/Toast";
 import { SkeletonScript } from "@/components/Loader";
+import { CreatorModal } from "@/components/CreatorModal";
 import { generateMockScript, type Mood, type Script } from "@/lib/mockScript";
 import { scriptApi } from "@/lib/api";
 
