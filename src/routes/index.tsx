@@ -70,6 +70,7 @@ function Index() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden">
+      <CreatorModal />
       <Navbar onHistoryClick={() => setHistoryOpen(true)} />
       <main className="relative">
         <Hero />
