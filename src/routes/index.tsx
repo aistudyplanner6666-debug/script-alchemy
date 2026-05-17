@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { InputForm } from "@/components/InputForm";
@@ -10,6 +11,7 @@ import { SkeletonScript } from "@/components/Loader";
 import { CreatorModal } from "@/components/CreatorModal";
 import { generateMockScript, type Mood, type Script } from "@/lib/mockScript";
 import { scriptApi } from "@/lib/api";
+import { User } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: Index,
