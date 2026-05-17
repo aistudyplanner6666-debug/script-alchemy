@@ -1,26 +1,12 @@
-import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Linkedin, Globe, X, Sparkles, Code2, Cpu } from "lucide-react";
 
-const MODAL_SHOWN_KEY = "cinescript-creator-modal-shown";
+interface Props {
+  open: boolean;
+  onClose: () => void;
+}
 
-export function CreatorModal() {
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    // Show once per session; reset with localStorage clear or incognito
-    const shown = sessionStorage.getItem(MODAL_SHOWN_KEY);
-    if (!shown) {
-      const t = setTimeout(() => setOpen(true), 800);
-      return () => clearTimeout(t);
-    }
-  }, []);
-
-  function close() {
-    setOpen(false);
-    sessionStorage.setItem(MODAL_SHOWN_KEY, "true");
-  }
-
+export function CreatorModal({ open, onClose }: Props) {
   return (
     <AnimatePresence>
       {open && (
@@ -34,7 +20,7 @@ export function CreatorModal() {
           {/* Backdrop */}
           <motion.div
             className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            onClick={close}
+            onClick={onClose}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -49,11 +35,14 @@ export function CreatorModal() {
             transition={{ duration: 0.5, ease: "easeOut" }}
           >
             {/* Gold top glow */}
-            <div className="absolute inset-x-0 top-0 h-32 bg-gradient-radial-gold opacity-40 pointer-events-none" />
+            <div
+              className="absolute inset-x-0 top-0 h-32 opacity-40 pointer-events-none"
+              style={{ background: "radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.18), transparent 60%)" }}
+            />
 
             {/* Close button */}
             <button
-              onClick={close}
+              onClick={onClose}
               className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-muted-foreground transition hover:border-gold/40 hover:text-gold"
             >
               <X className="h-3.5 w-3.5" />
@@ -135,7 +124,7 @@ export function CreatorModal() {
                 ].map((b) => (
                   <span
                     key={b.label}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-[11px] text-muted-foreground"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-[11px] text-muted-foreground"
                   >
                     <b.icon className="h-3 w-3 text-gold/80" />
                     {b.label}
